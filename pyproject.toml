@@ -1,0 +1,178 @@
+[build-system]
+# Should be mirrored in requirements/build.txt
+requires = [
+    "cmake>=3.26.1",
+    "ninja",
+    "packaging>=24.2",
+    "setuptools>=77.0.3,<80.0.0",
+    "setuptools-scm>=8.0",
+    "torch == 2.7.0",
+    "wheel",
+    "jinja2",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vllm_logits"
+version = "0.1"
+authors = [{name = "Sungho Park"}]
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+readme = "README.md"
+description = "A high-throughput and memory-efficient inference and serving engine for LLMs"
+classifiers = [
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+requires-python = ">=3.9,<3.13"
+dynamic = ["dependencies", "optional-dependencies"]
+
+[project.urls]
+Homepage="https://github.com/pshlego/vllm_logits"
+
+[project.scripts]
+vllm_logits = "vllm_logits.entrypoints.cli.main:main"
+
+[project.entry-points."vllm_logits.general_plugins"]
+lora_filesystem_resolver = "vllm_logits.plugins.lora_resolvers.filesystem_resolver:register_filesystem_resolver"
+
+[tool.setuptools_scm]
+# no extra settings needed, presence enables setuptools-scm
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["vllm_logits*"]
+
+[tool.yapfignore]
+ignore_patterns = [
+    ".buildkite/**",
+    "benchmarks/**",
+    "build/**",
+    "examples/**",
+]
+
+[tool.ruff]
+# Allow lines to be as long as 80.
+line-length = 80
+
+[tool.ruff.lint.per-file-ignores]
+"vllm_logits/third_party/**" = ["ALL"]
+"vllm_logits/version.py" = ["F401"]
+"vllm_logits/_version.py" = ["ALL"]
+# Python 3.8 typing - skip V0 code
+"vllm_logits/attention/**/*.py" = ["UP006", "UP035"]
+"vllm_logits/core/**/*.py" = ["UP006", "UP035"]
+"vllm_logits/engine/**/*.py" = ["UP006", "UP035"]
+"vllm_logits/executor/**/*.py" = ["UP006", "UP035"]
+"vllm_logits/prompt_adapter/**/*.py" = ["UP006", "UP035"]
+"vllm_logits/spec_decode/**/*.py" = ["UP006", "UP035"]
+"vllm_logits/worker/**/*.py" = ["UP006", "UP035"]
+# Python 3.8 typing - skip utils for ROCm
+"vllm_logits/utils.py" = ["UP006", "UP035"]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    # "I",
+    # flake8-logging-format
+    "G",
+]
+ignore = [
+    # star imports
+    "F405", "F403",
+    # lambda expression assignment
+    "E731",
+    # Loop control variable not used within loop body
+    "B007",
+    # f-string format
+    "UP032",
+    # Can remove once 3.10+ is the minimum Python version
+    "UP007",
+]
+
+[tool.mypy]
+plugins = ['pydantic.mypy']
+ignore_missing_imports = true
+check_untyped_defs = true
+follow_imports = "silent"
+
+# After fixing type errors resulting from follow_imports: "skip" -> "silent",
+# move the directory here and remove it from tools/mypy.sh
+files = [
+    "vllm_logits/*.py",
+    "vllm_logits/adapter_commons",
+    "vllm_logits/assets",
+    "vllm_logits/entrypoints",
+    "vllm_logits/core",
+    "vllm_logits/inputs",
+    "vllm_logits/logging_utils",
+    "vllm_logits/multimodal",
+    "vllm_logits/platforms",
+    "vllm_logits/transformers_utils",
+    "vllm_logits/triton_utils",
+    "vllm_logits/usage",
+]
+# TODO(woosuk): Include the code from Megatron and HuggingFace.
+exclude = [
+    "vllm_logits/model_executor/parallel_utils/|vllm_logits/model_executor/models/",
+    # Ignore triton kernels in ops.
+    'vllm_logits/attention/ops/.*\.py$'
+]
+
+[tool.codespell]
+ignore-words-list = "dout, te, indicies, subtile, ElementE"
+skip = "tests/models/fixtures/*,tests/prompts/*,benchmarks/sonnet.txt,tests/lora/data/*,build/*,vllm_logits/third_party/*"
+
+[tool.isort]
+skip_glob = [
+    ".buildkite/*",
+    "benchmarks/*",
+    "examples/*",
+]
+use_parentheses = true
+skip_gitignore = true
+
+[tool.pytest.ini_options]
+markers = [
+    "skip_global_cleanup",
+    "core_model: enable this model test in each PR instead of only nightly",
+    "cpu_model: enable this model test in CPU tests",
+    "split: run this test as part of a split",
+    "distributed: run this test only in distributed GPU tests",
+    "skip_v1: do not run this test with v1",
+    "optional: optional tests that are automatically skipped, include --optional to run them",
+]
+
+[tool.pymarkdown]
+plugins.md004.style = "sublist" # ul-style
+plugins.md007.indent = 4 # ul-indent
+plugins.md007.start_indented = true # ul-indent
+plugins.md013.enabled = false # line-length
+plugins.md041.enabled = false # first-line-h1
+plugins.md033.enabled = false # inline-html
+plugins.md046.enabled = false # code-block-style
+plugins.md024.allow_different_nesting = true # no-duplicate-headers
+
+[tool.ty.src]
+root = "./vllm_logits"
+respect-ignore-files = true
+
+[tool.ty.environment]
+python = "./.venv"
